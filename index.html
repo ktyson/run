@@ -1,1 +1,410 @@
-Run. Run away. 
+<html>
+<head>
+<!--Run. Run away.  -->
+ 
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<link rel="stylesheet" href="https://code.getmdl.io/1.2.0/material.teal-green.min.css" />
+<script defer src="https://code.getmdl.io/1.2.0/material.min.js"></script>
+   
+<script type="text/javascript">
+
+var runDiv;
+var dotSize = 15;
+
+var lineLen = 8;
+var numLines = 8;
+var lineStepSize = 15;
+
+var lineInterval = Math.floor(window.innerHeight / numLines);
+
+var lines;
+var firstLine;
+var lastLine;
+
+var endzonePercent = 0.05; //when dot enters this zone it gets put back to reposition
+var repositionPercent = 0.1;
+
+function ready() {
+    
+    
+    createLines();
+    setLines();
+
+    runDiv = document.createElement("DIV");
+    
+    var y = window.innerHeight - dotSize;
+    var x= Math.floor(window.innerWidth / 2);
+    var startPosStyle = "left: " + x + "px; top: " + y + "px; "
+    
+    var styleAttr = document.createAttribute("style");
+    styleAttr.value = "position:absolute; background-color:red; width:"+ dotSize +"px; height:"+ dotSize + "px; " + startPosStyle; 
+    runDiv.setAttributeNode(styleAttr);  
+    
+    document.body.appendChild(runDiv);
+
+
+}
+
+document.onkeydown = checkKey;
+
+
+
+function checkKey(e) {
+
+    e = e || window.event;
+
+    if (e.keyCode == '38') {
+        // move div up
+        runStep("up");
+    }
+    else if (e.keyCode == '40') {
+        //move div down
+        runStep("dn");
+        
+    }
+    else if (e.keyCode == '37') {
+       //move div left
+       runStep("lt");
+    }
+    else if (e.keyCode == '39') {
+       //move div right
+       runStep("rt");
+    }
+}
+
+function runStep(stepKey) {
+    
+    var processStep = true;
+    var newTop = runDiv.style.top;
+    var newLeft = runDiv.style.left;;
+    
+    if(parseInt(runDiv.style.left) < 0) {
+        //dot going out of window to left
+        processStep = false;
+        newLeft = "0px";
+        runDiv.style.left = newLeft;        
+    }
+    
+    if(parseInt(runDiv.style.left) + dotSize > window.innerWidth) {
+        //dot going out of window to right
+        processStep = false;
+        newLeft = (window.innerWidth - dotSize) + "px";
+        runDiv.style.left = newLeft;    
+        
+    }
+    
+    if (parseInt(runDiv.style.top) + dotSize > window.innerHeight) {
+        //dot going out of window to bottom
+        processStep = false;
+        newTop = (window.innerHeight - dotSize) + "px";
+        runDiv.style.top = newTop;
+    }
+    
+    if(parseInt(runDiv.style.top) < (Math.floor(window.innerHeight * endzonePercent))) {
+        //dot going up far enough to need repositioning
+        processStep = false;
+        newTop = (Math.floor(window.innerHeight) * repositionPercent) + "px";
+        runDiv.style.top = newTop;  
+    }
+    
+
+    if(processStep == true) {
+        switch (stepKey) {
+            case "up":
+                newTop = (parseInt(runDiv.style.top) - dotSize) + "px";
+                runDiv.style.top = newTop;
+                stepLines("up");
+                break;
+            case "dn":
+                newTop = (parseInt(runDiv.style.top) + dotSize) + "px";
+                runDiv.style.top = newTop;  
+                stepLines("dn");
+                break;
+            case "rt":
+                newLeft = (parseInt(runDiv.style.left) + dotSize) + "px";
+                runDiv.style.left = newLeft;
+                break;
+            case "lt":
+                newLeft = (parseInt(runDiv.style.left) - dotSize) + "px";
+                runDiv.style.left = newLeft;            
+                break;
+            default:
+        }
+        
+        var rnd = Math.random();
+        var rnd2 = Math.random();
+        
+        var tklType = 0;
+        if (rnd2 < .5) {
+            tklType = 1;
+        }
+        if (rnd < .3) { 
+            makeTackler(tklType, newTop);
+        }
+        
+        
+        
+    }
+}
+
+function stepLines(stepKey) {
+    
+    var stepLimit;
+    var stepDir;
+ 
+    if(stepKey == "up") {
+        //target moving up, lines go down
+        stepLimit = Math.floor(window.innerHeight) - 1;
+        var lineAt = parseInt(lastLine.style.top); // + lineInterval;
+        stepDir = 1;
+        if(lineAt > stepLimit) {
+            //we have passed limit
+            setLines();
+//console.log("downward limit - reset lines");            
+        } else {
+            //we roll
+            moveLines(lineStepSize*stepDir);
+//console.log("move lines down");
+        }
+
+    } else {
+        //target moving down, lines go up
+        stepLimit = 0;
+        var lineAt = parseInt(firstLine.style.top);
+        stepDir = -1;
+        if(lineAt <= stepLimit) {
+            //we have passed limit
+            setLines();
+//console.log("upward limit - reset lines");            
+        } else {
+            //we roll
+            moveLines(lineStepSize*stepDir);
+//console.log("move lines up");
+        }
+    }
+    
+    
+}
+
+function moveLines(shiftStep) {
+
+    for (var i = 0; i < lines.length; i++) {
+         {
+            var oldTop = parseInt(lines[i].style.top);
+            var newTop = ( oldTop + shiftStep) + "px";
+            lines[i].style.top = newTop;
+//console.log(oldTop, newTop, lineStepSize*stepDir);
+        }
+    }
+}
+
+
+function createLines() {
+
+    for (var y = 0; y < (window.innerHeight - lineInterval); y = y + lineInterval) {
+
+        var lineDiv = document.createElement("DIV");
+        
+        var styleAttr = document.createAttribute("style");
+        styleAttr.value = "position:absolute; background-color:black; width:"+ lineLen +"px; height:1px;";             
+        lineDiv.setAttributeNode(styleAttr);  
+
+        var classAttr =  document.createAttribute("class");
+        classAttr.value = "lineDiv";
+        lineDiv.setAttributeNode(classAttr); 
+        
+        var idAttr =  document.createAttribute("id");
+        idAttr.value = "line" + y;
+        lineDiv.setAttributeNode(idAttr); 
+        
+        document.body.appendChild(lineDiv);        
+    }
+    
+    //set globals - hak
+    lines = document.getElementsByClassName("lineDiv");
+    firstLine = lines[0];
+    lastLine = lines[lines.length-1];
+    
+    //originally create the grad lines - run once 
+    //NOTE add window change reset
+    
+    console.log("initialized lines"); 
+  
+}
+
+
+function setLines() {
+    
+    var lines = document.getElementsByClassName("lineDiv");
+    var yy = 0;
+    
+    for (var y = 0; y < (window.innerHeight - lineInterval); y = y + lineInterval) {
+        var line = lines[yy]
+        yy++;
+        line.style.top = y + "px";
+//console.log(yy, y, line.style.top);  
+    }
+
+}
+
+
+function makeTackler(tklType, startY) {
+    
+    var tklSize = 10;
+    var tklSpeed = 10; 
+    var tklDiv = document.createElement("DIV");
+    
+    
+    var styleAttr = document.createAttribute("style");
+    styleAttr.value = "position:absolute; background-color:aqua; width:"+ tklSize +"px; height:" + tklSize + "px; top:" + startY;             
+    tklDiv.setAttributeNode(styleAttr);  
+    
+    document.body.appendChild(tklDiv);   
+
+    
+    var curPx;
+    switch(tklType){
+        case 1:
+            curPx = 0;
+            break;
+        case 0:
+            curPx = window.innerWidth - dotSize;
+            break;
+        default:
+    }
+    
+    var timer = setInterval(runTkl, tklSpeed);
+    
+    
+    function runTkl() {
+        
+//console.log("tklType", tklType)
+        
+        switch(tklType) {
+        case 1:
+            //left to right tackle
+            if(curPx >= window.innerWidth) {
+                clearInterval(timer);
+                document.body.removeChild(tklDiv);
+            } else {
+                checkHit(curPx,parseInt(startY));
+                tklDiv.style.left = curPx + "px";
+                curPx = curPx + 4;
+            }
+            break;
+        case 0:
+            //right to left tackle
+            if(curPx <= 0) {
+                clearInterval(timer);
+                document.body.removeChild(tklDiv);
+            } else {
+                checkHit(curPx,parseInt(startY));
+                tklDiv.style.left = curPx + "px";
+                curPx = curPx - 4;
+                
+            }
+            break;
+        case 2:
+            //top to bottom tackle
+            if(curPx <= 0) {
+                clearInterval(timer);
+                document.body.removeChild(tklDiv);
+            } else {
+                checkHit(curPx,parseInt(startY));
+                tklDiv.style.left = curPx + "px";
+                curPx = curPx - 4;
+                
+            }
+            break;           
+        default:
+            
+        }
+        
+    }
+
+}
+
+function checkHit(curPx,startY) {
+    
+    var predatorX = curPx + 3;
+    var predatorY = startY + 3;
+
+    var targetX = parseInt(runDiv.style.left);
+    var targetY = parseInt(runDiv.style.top);
+
+//console.log(predatorX,predatorY,targetX,targetY);
+    
+    if(Math.abs(predatorX - targetX) <= 5 && Math.abs(predatorY - targetY) <= 5) {
+        
+        //clearBody();
+        var hitMsg = document.createElement("DIV");
+        var txtNode = document.createTextNode("HIT (start again)"); 
+        hitMsg.appendChild(txtNode);
+    
+        var styleAttr = document.createAttribute("style");
+        styleAttr.value = "background-color:red;font-size:24pt;text-align:center";             
+        hitMsg.setAttributeNode(styleAttr);  
+        document.body.appendChild(hitMsg);
+        
+        var hitTimer = setInterval(clearBody, 1000);
+
+    }
+    
+    
+}
+
+
+function clearBody() {
+    
+    window.location.reload()
+    
+
+}
+
+    
+</script>
+    
+    
+</head> 
+<body onLoad="ready()">
+    <!--<h3>Run. Run away.</h3>-->
+        <!-- Always shows a header, even in smaller screens. -->
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+  <header class="mdl-layout__header">
+    <div class="mdl-layout__header-row">
+      <!-- Title -->
+      <span class="mdl-layout-title">mappery</span>
+      <!-- Add spacer, to align navigation to the right -->
+      <div class="mdl-layout-spacer"></div>
+      <!-- Navigation. We hide it in small screens. -->
+      <nav class="mdl-navigation mdl-layout--large-screen-only">
+        <a class="mdl-navigation__link" href="">Maps</a>
+        <a class="mdl-navigation__link" href="">Settings</a>
+        <a class="mdl-navigation__link" href="">Scores</a>
+        <a class="mdl-navigation__link" href="">Help</a>
+      </nav>
+    </div>
+  </header>
+  <div class="mdl-layout__drawer">
+    <span class="mdl-layout-title">mappery</span>
+    <nav class="mdl-navigation">
+      <a class="mdl-navigation__link" href="">Maps</a>
+      <a class="mdl-navigation__link" href="">Settings</a>
+      <a class="mdl-navigation__link" href="">Scores</a>
+      <a class="mdl-navigation__link" href="">Help</a>
+    </nav>
+  </div>
+  <main class="mdl-layout__content">
+    <div class="mainContent">
+       <div class="judge"></div>
+       <div id="mainView"><!-- Your content goes here --></div> 
+    </div>
+    
+  </main>
+</div>
+</body>
+    
+</html>
+
+
+ 
